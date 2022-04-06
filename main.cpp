@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 std::vector<std::vector<int>> graphGen(int size);
-std::vector<int> sequentialBFS(std::vector<std::vector<int>> graph, int from, int to);
+void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to);
 
 
 int main()
@@ -26,7 +26,7 @@ std::vector<std::vector<int>> graphGen(int size)
 	return graph;
 }
 
-std::vector<int> sequentialBFS(std::vector<std::vector<int>> graph, int from, int to)
+void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to)
 {
 	std::vector<bool> visited(graph.size(), false);
 	std::queue<int> queue;
