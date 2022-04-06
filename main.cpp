@@ -1,19 +1,21 @@
 #include "stdafx.h"
 
-std::vector<std::vector<int>> graphGen(int size);
+std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
 void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to);
 
 
 int main()
 {
-	auto graph = graphGen(250);
-	sequentialBFS(graph, 0, 213);
-	std::cout << "End\n";
+	std::srand(std::time(NULL));
+
+	auto graph = graphGen(250, 5);
+	sequentialBFS(graph, 0, graph.size() - 1);
+	std::cout << "\nThe End\n";
 }
 
-std::vector<std::vector<int>> graphGen(int size)
+std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
 {
-	// Adjacency matrix
+	// Init adjacency matrix with zeros
 	std::vector<std::vector<int>> graph(size, std::vector<int>(size));
 
 	// Making the graph connected
@@ -21,6 +23,23 @@ std::vector<std::vector<int>> graphGen(int size)
 	{
 		graph[i][i + 1] = 1;
 		graph[i + 1][i] = 1;
+	}
+
+	// Add move edges
+	if (additionalEdges > 0)
+	{
+		for (int i = 0; i < graph.size(); i++)
+		{
+			for (int j = 0; j < additionalEdges; j++)
+			{
+				int k;
+				do
+				{
+					k = std::rand() % graph[i].size();
+				} while (k == i + 1);
+				graph[i][k] = 1;
+			}
+		}
 	}
 
 	return graph;
@@ -41,17 +60,16 @@ void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to)
 		int cur = queue.front();
 		std::cout << cur << " ";
 		queue.pop();
-		if (cur == to) 
-		{
-			std::cout << "\nFOUND!\n";
-			break;
-		}
 
 		// For every adjacent that is not yet visited - add to queue
 		for (int i = 0; i < graph[cur].size(); i++)
 		{
 			if (graph[cur][i] == 1 && !visited[i])
 			{
+				if (i == to)
+				{
+					return;
+				}
 				visited[i] = true;
 				queue.push(i);
 			}
