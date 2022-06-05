@@ -5,7 +5,7 @@ std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
 void printNodeVector(std::vector<Node>& nodeVector, int v);
 
 void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int from, int goal);
-void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal);
+void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads=2);
 
 int main()
 {
@@ -76,16 +76,16 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 	while (!queue.empty())
 	{
 		// Get the first in queue
-		int cur = queue.front();
+		int curNode = queue.front();
 		queue.pop();
 
 		// For every adjacent that is not yet visited - add to queue
-		for (int i = 0; i < graph[cur].size(); i++)
+		for (int i = 0; i < graph[curNode].size(); i++)
 		{
-			if (graph[cur][i] == 1 && nodeVector[i].d == -1)
+			if (graph[curNode][i] == 1 && nodeVector[i].d == -1)
 			{
-				nodeVector[i].from = cur;
-				nodeVector[i].d = nodeVector[cur].d + 1;
+				nodeVector[i].from = curNode;
+				nodeVector[i].d = nodeVector[curNode].d + 1;
 				if (i == goal)
 				{
 					return;
@@ -96,34 +96,52 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 	}
 }
 
-void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal)
+void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
 {
-	std::vector<int> nodeArray(graph.size(), -1);
 	std::queue<int> queue;
 
 	// Starting with [from]
+	nodeVector[start].d = 0;
 	queue.push(start);
-	nodeArray[start] = 0;
 
 	while (!queue.empty())
 	{
-		// Get the first in queue
-		int cur = queue.front();
-		std::cout << cur << " ";
-		queue.pop();
+		// Get the current level
+		int level = nodeVector[queue.front()].d;
+		std::vector<int> currentFrontier;
 
-		// For every adjacent that is not yet visited - add to queue
-		for (int i = 0; i < graph[cur].size(); i++)
+		// Fill frontier vector
+		while (nodeVector[queue.front()].d == level)
 		{
-			if (graph[cur][i] == 1 && nodeArray[i] == -1)
-			{
-				if (i == goal)
-				{
-					return;
-				}
-				nodeArray[i] = nodeArray[cur] + 1;
-				queue.push(i);
-			}
+			currentFrontier.push_back(queue.front());
+			queue.pop();
+		};
+
+		std::vector<std::thread> threads(nThreads);
+		//If the node is the goal
+		//if (currentNode == goal)
+		//{
+		//	return;
+		//}
+		
+		// FOR THREAD IN RANGE NUM_THREADS
+		// IF QUEUE LEVEL IS OK
+		//    START PROCCES
+		// ELSE
+		//   WAIT UNTIL ALL ARE FINISHED
+	}
+}
+
+void parallelBFSWorker(int curNode, std::vector<int>& adjacent, std::queue<int>& queue, std::vector<Node>& nodeVector)
+{
+	for (int i = 0; i < adjacent.size(); i++)
+	{
+		if (adjacent[i] == 1 && nodeVector[i].d == -1)
+		{
+			nodeVector[i].from = curNode;
+			nodeVector[i].d = nodeVector[curNode].d + 1;
+
+			queue.push(i);
 		}
 	}
 }
