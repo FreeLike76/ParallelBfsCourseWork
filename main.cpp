@@ -1,15 +1,26 @@
 #include "stdafx.h"
+#include "Node.h"
 
 std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
-void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to);
+void printNodeVector(std::vector<Node>& nodeVector, int v);
 
+void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int from, int goal);
+void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal);
 
 int main()
 {
 	std::srand(std::time(NULL));
 
-	auto graph = graphGen(250, 5);
-	sequentialBFS(graph, 0, graph.size() - 1);
+	auto graph = graphGen(1000, 1);
+	int start = 0;
+	int goal = graph.size() - 1;
+
+	auto seqNodeVector = std::vector<Node>(graph.size());
+	auto parNodeVector = std::vector<Node>(graph.size());
+
+	sequentialBFS(graph, seqNodeVector, start, goal);
+
+	printNodeVector(seqNodeVector, goal);
 	std::cout << "\nThe End\n";
 }
 
@@ -45,14 +56,54 @@ std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
 	return graph;
 }
 
-void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to)
+void printNodeVector(std::vector<Node>& nodeVector, int v)
 {
-	std::vector<bool> visited(graph.size(), false);
+	if (nodeVector[v].from != -1)
+	{
+		printNodeVector(nodeVector, nodeVector[v].from);
+	}
+	std::cout << v << ":" << nodeVector[v].d << ", ";
+}
+
+void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal)
+{
 	std::queue<int> queue;
 
 	// Starting with [from]
-	visited[from] = true;
-	queue.push(from);
+	nodeVector[start].d = 0;
+	queue.push(start);
+
+	while (!queue.empty())
+	{
+		// Get the first in queue
+		int cur = queue.front();
+		queue.pop();
+
+		// For every adjacent that is not yet visited - add to queue
+		for (int i = 0; i < graph[cur].size(); i++)
+		{
+			if (graph[cur][i] == 1 && nodeVector[i].d == -1)
+			{
+				nodeVector[i].from = cur;
+				nodeVector[i].d = nodeVector[cur].d + 1;
+				if (i == goal)
+				{
+					return;
+				}
+				queue.push(i);
+			}
+		}
+	}
+}
+
+void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal)
+{
+	std::vector<int> nodeArray(graph.size(), -1);
+	std::queue<int> queue;
+
+	// Starting with [from]
+	queue.push(start);
+	nodeArray[start] = 0;
 
 	while (!queue.empty())
 	{
@@ -64,16 +115,15 @@ void sequentialBFS(std::vector<std::vector<int>> graph, int from, int to)
 		// For every adjacent that is not yet visited - add to queue
 		for (int i = 0; i < graph[cur].size(); i++)
 		{
-			if (graph[cur][i] == 1 && !visited[i])
+			if (graph[cur][i] == 1 && nodeArray[i] == -1)
 			{
-				if (i == to)
+				if (i == goal)
 				{
 					return;
 				}
-				visited[i] = true;
+				nodeArray[i] = nodeArray[cur] + 1;
 				queue.push(i);
 			}
 		}
 	}
 }
-
