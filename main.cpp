@@ -22,12 +22,12 @@ int main()
 		file.open("test1.txt", std::ios::out);
 		std::cout
 			<< "Save results: true" << std::endl
-			<< "file is opened: " << file.is_open() << std::endl;
+			<< "File is opened: " << file.is_open() << std::endl;
 	}
 	// If file was opened write a header
 	if (file.is_open())
 	{
-		file << "iGraphSize, iGraphPow,  iThreads, seqTime, seqDistance, parTime, parDistance\n";
+		file << "iGraphSize,iGraphPow,iThreads,seqTime,seqDistance,parTime,parDistance\n";
 	}
 	for (int iGraphSize = 8; iGraphSize < 16385; iGraphSize *= 2)
 	{
@@ -68,12 +68,12 @@ int main()
 					/// Save results
 					if (file.is_open())
 					{
-						file << iGraphSize << ", "
-							<< iGraphPow << ", "
-							<< iThreads << ", "
-							<< seqTime << ", "
-							<< seqNodeVector[goal].d << ", "
-							<< parTime << ", "
+						file << iGraphSize << ","
+							<< iGraphPow << ","
+							<< iThreads << ","
+							<< seqTime << ","
+							<< seqNodeVector[goal].d << ","
+							<< parTime << ","
 							<< parNodeVector[goal].d << std::endl;
 					}
 				}
