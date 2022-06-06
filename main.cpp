@@ -13,40 +13,77 @@ void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueue<
 int main()
 {
 	std::srand(std::time(NULL));
-	for (int i = 0; i < 100; i++)
+
+	bool writeResult = true;
+	std::fstream file;
+
+	if (writeResult)
 	{
-		////////////////////// TASK ///////////////////////
-		auto graph = graphGen(10000, 1);
-
-		int start = 0;
-		int goal = graph.size() - 1;
-
-		std::vector<Node> seqNodeVector(graph.size());
-		std::vector<Node> parNodeVector(graph.size());
-
-
-		/////////////////// SEQUENTIAL ////////////////////
-		std::chrono::steady_clock::time_point seqBegin = std::chrono::steady_clock::now();
-		sequentialBFS(graph, seqNodeVector, start, goal);
-		std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
-		std::cout << std::endl
-			<< "Sequential: "
-			<< std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count()
-			<< " ms" << std::endl;
-		printNodeVector(seqNodeVector, goal);
-
-
-		//////////////////// PARALLEL /////////////////////
-		std::chrono::steady_clock::time_point parBegin = std::chrono::steady_clock::now();
-		parallelBFS(graph, parNodeVector, start, goal, 2);
-		std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
-		std::cout << std::endl
-			<< "Parallel: "
-			<< std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count()
-			<< " ms" << std::endl;
-		printNodeVector(parNodeVector, goal);
+		file.open("test1.txt", std::ios::out);
+		std::cout
+			<< "Save results: true" << std::endl
+			<< "file is opened: " << file.is_open() << std::endl;
 	}
-	std::cout << "\nThe End\n";
+	// If file was opened write a header
+	if (file.is_open())
+	{
+		file << "iGraphSize, iGraphPow,  iThreads, seqTime, seqDistance, parTime, parDistance, \n";
+	}
+	for (int iGraphSize = 8; iGraphSize < 16385; iGraphSize *= 2)
+	{
+		for (int iGraphPow = 0; iGraphPow < 17; iGraphPow++)
+		{
+			for (int iThreads = 2; iThreads < 17; iThreads += 2)
+			{
+				for (int iRepeat = 0; iRepeat < 5; iRepeat++)
+				{
+					////////////////////// TASK ///////////////////////
+					auto graph = graphGen(iGraphSize, iGraphPow);
+					int start = 0;
+					int goal = graph.size() - 1;
+
+					std::vector<Node> seqNodeVector(graph.size());
+					std::vector<Node> parNodeVector(graph.size());
+
+
+					/////////////////// SEQUENTIAL ////////////////////
+					std::chrono::steady_clock::time_point seqBegin = std::chrono::steady_clock::now();
+					sequentialBFS(graph, seqNodeVector, start, goal);
+					std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
+					//stats
+					auto seqTime = std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count();
+					std::cout << std::endl << "Sequential: " << seqTime << " ms" << std::endl;
+					printNodeVector(seqNodeVector, goal);
+
+
+					//////////////////// PARALLEL /////////////////////
+					std::chrono::steady_clock::time_point parBegin = std::chrono::steady_clock::now();
+					parallelBFS(graph, parNodeVector, start, goal, iThreads);
+					std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
+					// stats
+					auto parTime = std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count();
+					std::cout << std::endl << "Parallel: " << parTime << " ms" << std::endl;
+					printNodeVector(parNodeVector, goal);
+
+					/// Save results
+					if (file.is_open())
+					{
+						file << iGraphSize << ", "
+							<< iGraphPow << ", "
+							<< iThreads << ", "
+							<< seqTime << ", "
+							<< seqNodeVector[goal].d << ", "
+							<< parTime << ", "
+							<< parNodeVector[goal].d << ", " << std::endl;
+					}
+				}
+			}
+		}
+	}
+	if (file.is_open())
+	{
+		file.close();
+	}
 }
 
 std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
@@ -125,7 +162,7 @@ void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVec
 {
 	ThreadSafeQueue<int> nodeQueue;
 	bool goalIsReached = false;
-	
+
 	// Starting with [from]
 	nodeVector[start].d = 0;
 	nodeQueue.push(start);
