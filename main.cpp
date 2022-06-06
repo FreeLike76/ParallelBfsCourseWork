@@ -27,7 +27,7 @@ int main()
 	// If file was opened write a header
 	if (file.is_open())
 	{
-		file << "iGraphSize, iGraphPow,  iThreads, seqTime, seqDistance, parTime, parDistance, \n";
+		file << "iGraphSize, iGraphPow,  iThreads, seqTime, seqDistance, parTime, parDistance\n";
 	}
 	for (int iGraphSize = 8; iGraphSize < 16385; iGraphSize *= 2)
 	{
@@ -74,7 +74,7 @@ int main()
 							<< seqTime << ", "
 							<< seqNodeVector[goal].d << ", "
 							<< parTime << ", "
-							<< parNodeVector[goal].d << ", " << std::endl;
+							<< parNodeVector[goal].d << std::endl;
 					}
 				}
 			}
