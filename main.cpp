@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Node.h"
-#include "ThreadSafeQueueWrapper.h"
+#include "ThreadSafeQueue.h"
 
 std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
 void printNodeVector(std::vector<Node>& nodeVector, int v);
@@ -8,36 +8,45 @@ void printNodeVector(std::vector<Node>& nodeVector, int v);
 void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int from, int goal);
 
 void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads = 2);
-void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueueWrapper<int>& nodeQueue, std::vector<Node>& nodeVector);
+void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector);
 
 int main()
 {
 	std::srand(std::time(NULL));
+	for (int i = 0; i < 100; i++)
+	{
+		////////////////////// TASK ///////////////////////
+		auto graph = graphGen(10000, 1);
 
-	auto graph = graphGen(10000, 1);
-	int start = 0;
-	int goal = graph.size() - 1;
+		int start = 0;
+		int goal = graph.size() - 1;
 
-	std::vector<Node> seqNodeVector(graph.size());
-	std::vector<Node> parNodeVector(graph.size());
+		std::vector<Node> seqNodeVector(graph.size());
+		std::vector<Node> parNodeVector(graph.size());
 
-	std::chrono::steady_clock::time_point begin, end;
 
-	std::chrono::steady_clock::time_point seqBegin = std::chrono::steady_clock::now();
-	sequentialBFS(graph, seqNodeVector, start, goal);
-	std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
+		/////////////////// SEQUENTIAL ////////////////////
+		std::chrono::steady_clock::time_point seqBegin = std::chrono::steady_clock::now();
+		sequentialBFS(graph, seqNodeVector, start, goal);
+		std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
+		std::cout << std::endl
+			<< "Sequential: "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count()
+			<< " ms" << std::endl;
+		printNodeVector(seqNodeVector, goal);
 
-	std::cout << std::endl << "Sequential: " << std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count() << " ms" << std::endl;
-	printNodeVector(seqNodeVector, goal);
 
-	std::chrono::steady_clock::time_point parBegin = std::chrono::steady_clock::now();
-	parallelBFS(graph, parNodeVector, start, goal, 4);
-	std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
-	
-	std::cout << std::endl << "Parallel: " << std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count() << " ms" << std::endl;
-	printNodeVector(parNodeVector, goal);
+		//////////////////// PARALLEL /////////////////////
+		std::chrono::steady_clock::time_point parBegin = std::chrono::steady_clock::now();
+		parallelBFS(graph, parNodeVector, start, goal, 2);
+		std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
+		std::cout << std::endl
+			<< "Parallel: "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count()
+			<< " ms" << std::endl;
+		printNodeVector(parNodeVector, goal);
+	}
 	std::cout << "\nThe End\n";
-
 }
 
 std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
@@ -114,10 +123,9 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 
 void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
 {
-	ThreadSafeQueueWrapper<int> nodeQueue;
-	ThreadSafeQueueWrapper<int> a;
-
+	ThreadSafeQueue<int> nodeQueue;
 	bool goalIsReached = false;
+	
 	// Starting with [from]
 	nodeVector[start].d = 0;
 	nodeQueue.push(start);
@@ -163,11 +171,10 @@ void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVec
 		{
 			return;
 		}
-
 	}
 }
 
-void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueueWrapper<int>& nodeQueue, std::vector<Node>& nodeVector)
+void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector)
 {
 	for (int i = 0; i < adjacent.size(); i++)
 	{
