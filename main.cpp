@@ -5,23 +5,38 @@ std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
 void printNodeVector(std::vector<Node>& nodeVector, int v);
 
 void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int from, int goal);
-void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads=2);
+
+void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads = 2);
+void parallelBFSWorker(int curNode, std::vector<int>& adjacent, std::queue<int>& queue, std::vector<Node>& nodeVector);
 
 int main()
 {
 	std::srand(std::time(NULL));
 
-	auto graph = graphGen(1000, 1);
+	auto graph = graphGen(10000, 1);
 	int start = 0;
 	int goal = graph.size() - 1;
 
-	auto seqNodeVector = std::vector<Node>(graph.size());
-	auto parNodeVector = std::vector<Node>(graph.size());
+	std::vector<Node> seqNodeVector(graph.size());
+	std::vector<Node> parNodeVector(graph.size());
 
+	std::chrono::steady_clock::time_point begin, end;
+
+	std::chrono::steady_clock::time_point seqBegin = std::chrono::steady_clock::now();
 	sequentialBFS(graph, seqNodeVector, start, goal);
+	std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
 
+	std::cout << std::endl << "Sequential: " << std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count() << " ms" << std::endl;
 	printNodeVector(seqNodeVector, goal);
+
+	std::chrono::steady_clock::time_point parBegin = std::chrono::steady_clock::now();
+	parallelBFS(graph, parNodeVector, start, goal, 4);
+	std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
+	
+	std::cout << std::endl << "Parallel: " << std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count() << " ms" << std::endl;
+	printNodeVector(parNodeVector, goal);
 	std::cout << "\nThe End\n";
+
 }
 
 std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
@@ -99,36 +114,53 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
 {
 	std::queue<int> queue;
-
+	bool goalIsReached = false;
 	// Starting with [from]
 	nodeVector[start].d = 0;
 	queue.push(start);
 
 	while (!queue.empty())
 	{
-		// Get the current level
+		// Get the depth of a layer
 		int level = nodeVector[queue.front()].d;
-		std::vector<int> currentFrontier;
 
-		// Fill frontier vector
-		while (nodeVector[queue.front()].d == level)
+		// Init a vector of threads with capacity of nThreads
+		std::vector<std::thread> threads;
+		threads.reserve(nThreads);
+
+		for (int i = 0; i < nThreads; i++)
 		{
-			currentFrontier.push_back(queue.front());
+			// threads are avaliable but queue is empty => break
+			if (queue.empty())
+			{
+				break;
+			}
+			// goal is reached => return
+			int next = queue.front();
+			if (next == goal)
+			{
+				goalIsReached = true;
+				break;
+			}
+			// threads are avaliable but the node in queue is from the next layer => break
+			if (nodeVector[next].d != level)
+			{
+				break;
+			}
+			// else launch a thread
 			queue.pop();
-		};
+			std::thread th(parallelBFSWorker, next, std::ref(graph[next]), std::ref(queue), std::ref(nodeVector));
+			threads.push_back(move(th));
+		}
+		for (auto& th : threads)
+		{
+			th.join();
+		}
+		if (goalIsReached)
+		{
+			return;
+		}
 
-		std::vector<std::thread> threads(nThreads);
-		//If the node is the goal
-		//if (currentNode == goal)
-		//{
-		//	return;
-		//}
-		
-		// FOR THREAD IN RANGE NUM_THREADS
-		// IF QUEUE LEVEL IS OK
-		//    START PROCCES
-		// ELSE
-		//   WAIT UNTIL ALL ARE FINISHED
 	}
 }
 
@@ -140,7 +172,6 @@ void parallelBFSWorker(int curNode, std::vector<int>& adjacent, std::queue<int>&
 		{
 			nodeVector[i].from = curNode;
 			nodeVector[i].d = nodeVector[curNode].d + 1;
-
 			queue.push(i);
 		}
 	}
