@@ -2,43 +2,46 @@
 #include "Node.h"
 #include "ThreadSafeQueue.h"
 
-std::vector<std::vector<int>> graphGen(int size, int additionalEdges = 0);
+std::vector<std::vector<bool>> graphGen(int size, int additionalEdges=0, bool debug=false);
 void printNodeVector(std::vector<Node>& nodeVector, int v);
 
-void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int from, int goal);
+void sequentialBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int from, int goal);
 
-void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads = 2);
-void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector);
+void parallelBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int start, int goal, int threads = 2);
+void parallelBFSWorker(int curNode, std::vector<bool>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector);
 
 int main()
 {
 	std::srand(std::time(NULL));
 
 	bool writeResult = true;
-	std::fstream file;
+	std::string filename = "test.txt";
 
+	std::fstream file;
 	if (writeResult)
 	{
-		file.open("test1.txt", std::ios::out);
+		file.open(filename, std::ios::out);
 		std::cout
 			<< "Save results: true" << std::endl
-			<< "File is opened: " << file.is_open() << std::endl;
+			<< "File is opened: " << (bool)file.is_open() << std::endl;
 	}
 	// If file was opened write a header
 	if (file.is_open())
 	{
 		file << "iGraphSize,iGraphPow,iThreads,seqTime,seqDistance,parTime,parDistance\n";
 	}
-	for (int iGraphSize = 8; iGraphSize < 16385; iGraphSize *= 2)
+	for (int iRepeat = 0; iRepeat < 5; iRepeat++)
 	{
-		for (int iGraphPow = 0; iGraphPow < 17; iGraphPow++)
+		//for (int iGraphSize = 8; iGraphSize < 4097; iGraphSize *= 2)
+		for (int iGraphSize = 8192; iGraphSize < 16385; iGraphSize *= 2)
 		{
-			for (int iThreads = 2; iThreads < 17; iThreads += 2)
+			for (int iGraphPow = 0; iGraphPow < 16; iGraphPow++)
 			{
-				for (int iRepeat = 0; iRepeat < 5; iRepeat++)
+				for (int iThreads = 2; iThreads < 17; iThreads += 2)
 				{
+
 					////////////////////// TASK ///////////////////////
-					auto graph = graphGen(iGraphSize, iGraphPow);
+					auto graph = graphGen(iGraphSize, iGraphPow, true);
 					int start = 0;
 					int goal = graph.size() - 1;
 
@@ -86,16 +89,20 @@ int main()
 	}
 }
 
-std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
+std::vector<std::vector<bool>> graphGen(int size, int additionalEdges, bool debug)
 {
+	if (debug)
+	{
+		std::cout << "graphGen::strart" << std::endl;
+	}
 	// Init adjacency matrix with zeros
-	std::vector<std::vector<int>> graph(size, std::vector<int>(size));
+	std::vector<std::vector<bool>> graph(size, std::vector<bool>(size));
 
 	// Making the graph connected
 	for (int i = 0; i < size - 1; i++)
 	{
-		graph[i][i + 1] = 1;
-		graph[i + 1][i] = 1;
+		graph[i][i + 1] = true;
+		graph[i + 1][i] = true;
 	}
 
 	// Add move edges
@@ -110,11 +117,14 @@ std::vector<std::vector<int>> graphGen(int size, int additionalEdges)
 				{
 					k = std::rand() % graph[i].size();
 				} while (k == i + 1);
-				graph[i][k] = 1;
+				graph[i][k] = true;
 			}
 		}
 	}
-
+	if (debug)
+	{
+		std::cout << "graphGen::end" << std::endl;
+	}
 	return graph;
 }
 
@@ -127,7 +137,7 @@ void printNodeVector(std::vector<Node>& nodeVector, int v)
 	std::cout << v << ":" << nodeVector[v].d << ", ";
 }
 
-void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal)
+void sequentialBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int start, int goal)
 {
 	std::queue<int> nodeQueue;
 
@@ -144,7 +154,7 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 		// For every adjacent that is not yet visited - add to queue
 		for (int i = 0; i < graph[curNode].size(); i++)
 		{
-			if (graph[curNode][i] == 1 && nodeVector[i].d == -1)
+			if (graph[curNode][i] && nodeVector[i].d == -1)
 			{
 				nodeVector[i].from = curNode;
 				nodeVector[i].d = nodeVector[curNode].d + 1;
@@ -158,7 +168,7 @@ void sequentialBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeV
 	}
 }
 
-void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
+void parallelBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
 {
 	ThreadSafeQueue<int> nodeQueue;
 	bool goalIsReached = false;
@@ -183,7 +193,7 @@ void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVec
 			{
 				break;
 			}
-			// goal is reached => return
+			// goal is reached => return after threads are joined
 			int next = nodeQueue.front();
 			if (next == goal)
 			{
@@ -211,11 +221,11 @@ void parallelBFS(std::vector<std::vector<int>> graph, std::vector<Node>& nodeVec
 	}
 }
 
-void parallelBFSWorker(int curNode, std::vector<int>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector)
+void parallelBFSWorker(int curNode, std::vector<bool>& adjacent, ThreadSafeQueue<int>& nodeQueue, std::vector<Node>& nodeVector)
 {
 	for (int i = 0; i < adjacent.size(); i++)
 	{
-		if (adjacent[i] == 1 && nodeVector[i].d == -1)
+		if (adjacent[i] && nodeVector[i].d == -1)
 		{
 			nodeVector[i].from = curNode;
 			nodeVector[i].d = nodeVector[curNode].d + 1;
