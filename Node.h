@@ -4,8 +4,8 @@
 class Node
 {
 public:
-	short int from;
-	short int d;
+	int from;
+	int d;
 	Node();
 	Node(int d, int from);
 };

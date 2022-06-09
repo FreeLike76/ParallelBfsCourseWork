@@ -53,7 +53,7 @@ int main()
 	for (int iRepeat = 0; iRepeat < 5; iRepeat++)
 	{
 		//for (int iGraphSize = 8; iGraphSize < 4097; iGraphSize *= 2)
-		for (int iGraphSize = 8; iGraphSize < 16385; iGraphSize *= 2)
+		for (int iGraphSize = 128; iGraphSize < 16385; iGraphSize *= 2)
 		{
 			for (int iGraphPow = 0; iGraphPow < 16; iGraphPow++)
 			{
