@@ -7,14 +7,14 @@ void printNodeVector(std::vector<Node>& nodeVector,int v);
 
 void sequentialBFS
 (
-	std::vector<std::vector<bool>> graph,
+	std::vector<std::vector<bool>>& graph,
 	std::vector<Node>& nodeVector,
 	int from,
 	int goal
 );
 void parallelBFS
 (
-	std::vector<std::vector<bool>> graph,
+	std::vector<std::vector<bool>>& graph,
 	std::vector<Node>& nodeVector,
 	int start,
 	int goal,
@@ -168,7 +168,7 @@ void printNodeVector(std::vector<Node>& nodeVector, int v)
 	std::cout << v << ":" << nodeVector[v].d << ", ";
 }
 
-void sequentialBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int start, int goal)
+void sequentialBFS(std::vector<std::vector<bool>>& graph, std::vector<Node>& nodeVector, int start, int goal)
 {
 	std::queue<int> nodeQueue;
 
@@ -199,7 +199,7 @@ void sequentialBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& node
 	}
 }
 
-void parallelBFS(std::vector<std::vector<bool>> graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
+void parallelBFS(std::vector<std::vector<bool>>& graph, std::vector<Node>& nodeVector, int start, int goal, int nThreads)
 {
 	ThreadSafeQueue<int> nodeQueue;
 	bool goalIsReached = false;
