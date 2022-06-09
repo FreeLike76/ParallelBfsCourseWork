@@ -8,3 +8,6 @@
 #include <chrono>
 #include <mutex>
 #include <fstream>
+
+#include "Node.h"
+#include "ThreadSafeQueue.h"

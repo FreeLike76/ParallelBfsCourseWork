@@ -25,14 +25,12 @@ inline void ThreadSafeQueue<T>::push(T value)
 template<class T>
 inline bool ThreadSafeQueue<T>::empty()
 {
-	std::lock_guard<std::mutex> lock(m);
 	return q.empty();
 }
 
 template<class T>
 inline T ThreadSafeQueue<T>::front()
 {
-	std::lock_guard<std::mutex> lock(m);
 	return q.front();
 }
 
