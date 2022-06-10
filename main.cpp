@@ -3,10 +3,11 @@
 #include "Pathfinding.h"
 
 std::vector<std::vector<int>> graphGen(int size, int branching = 2, bool debug = false);
+void printAdjMatrix(std::vector<std::vector<int>> graph);
 void printNodeVector(std::vector<Node>& nodeVector, int v);
 
-void runSerial(int graphSize, bool printPath = true);
-void runParallel(int graphSize, int numThreads, bool printPath = true);
+void runSerial(int graphSize, bool printPath = true, bool printGraph = false);
+void runParallel(int graphSize, int numThreads, bool printPath = true, bool printGraph = false);
 void runComparison(int graphSize, int numThreads, bool printPath = true);
 void runTest(bool writeResult, std::string filename, bool printPath = false);
 
@@ -15,9 +16,9 @@ int main()
 {
 	std::srand(std::time(NULL));
 
-	//runSerial(1024 * 8, true);
-	//runParallel(1024 * 8, 8, true);
-	runComparison(1024 * 64, 8, false);
+	runSerial(8, true, true);
+	//runParallel(1024 * 8, 8, true, true);
+	//runComparison(1024 * 64, 8, false);
 	//runTest(true, "test.txt", true);
 	return 0;
 }
@@ -61,6 +62,18 @@ std::vector<std::vector<int>> graphGen(int size, int branching, bool debug)
 	return graph;
 }
 
+void printAdjMatrix(std::vector<std::vector<int>> graph)
+{
+	for (int i = 0; i < graph.size(); i++)
+	{
+		for (int j = 0; j < graph[i].size(); j++)
+		{
+			std::cout << graph[i][j] << "\t";
+		}
+		std::cout << std::endl;
+	}
+}
+
 void printNodeVector(std::vector<Node>& nodeVector, int v)
 {
 	if (nodeVector[v].from != -1)
@@ -70,9 +83,13 @@ void printNodeVector(std::vector<Node>& nodeVector, int v)
 	std::cout << v << ":" << nodeVector[v].d << ", ";
 }
 
-void runSerial(int graphSize, bool printPath)
+void runSerial(int graphSize, bool printPath, bool printGraph)
 {
 	auto graph = graphGen(graphSize, 2, true);
+	if (printGraph)
+	{
+		printAdjMatrix(graph);
+	}
 	int start = 0;
 	int goal = graph.size() - 1;
 
@@ -91,9 +108,13 @@ void runSerial(int graphSize, bool printPath)
 	}
 }
 
-void runParallel(int graphSize, int numThreads, bool printPath)
+void runParallel(int graphSize, int numThreads, bool printPath, bool printGraph)
 {
 	auto graph = graphGen(graphSize, 2, true);
+	if (printGraph)
+	{
+		printAdjMatrix(graph);
+	}
 	int start = 0;
 	int goal = graph.size() - 1;
 
