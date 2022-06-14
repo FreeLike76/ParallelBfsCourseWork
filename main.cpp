@@ -16,10 +16,10 @@ int main()
 {
 	std::srand(std::time(NULL));
 
-	runSerial(8, true, true);
-	//runParallel(1024 * 8, 8, true, true);
+	//runSerial(2048, true, false);
+	//runParallel(2048, 8, true, false);
 	//runComparison(1024 * 64, 8, false);
-	//runTest(true, "test.txt", true);
+	runTest(false, "test.txt", false);
 	return 0;
 }
 
@@ -99,8 +99,8 @@ void runSerial(int graphSize, bool printPath, bool printGraph)
 	sequentialBFS(graph, seqNodeVector, start, goal);
 	std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
 
-	auto seqTime = std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count();
-	std::cout << "Sequential: " << seqTime << " ms" << std::endl;
+	auto seqTime = std::chrono::duration_cast<std::chrono::nanoseconds>(seqEnd - seqBegin).count();
+	std::cout << "Sequential: " << seqTime << " ns" << std::endl;
 	if (printPath)
 	{
 		printNodeVector(seqNodeVector, goal);
@@ -124,8 +124,8 @@ void runParallel(int graphSize, int numThreads, bool printPath, bool printGraph)
 	parallelBFS(graph, parNodeVector, start, goal, 8);
 	std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
 
-	auto parTime = std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count();
-	std::cout << "Parallel: " << parTime << " ms" << std::endl;
+	auto parTime = std::chrono::duration_cast<std::chrono::nanoseconds>(parEnd - parBegin).count();
+	std::cout << "Parallel: " << parTime << " ns" << std::endl;
 	if (printPath)
 	{
 		printNodeVector(parNodeVector, goal);
@@ -147,8 +147,8 @@ void runComparison(int graphSize, int numThreads, bool printPath)
 	sequentialBFS(graph, seqNodeVector, start, goal);
 	std::chrono::steady_clock::time_point seqEnd = std::chrono::steady_clock::now();
 	// Print stats
-	auto seqTime = std::chrono::duration_cast<std::chrono::milliseconds>(seqEnd - seqBegin).count();
-	std::cout << "Sequential: " << seqTime << " ms" << std::endl;
+	auto seqTime = std::chrono::duration_cast<std::chrono::nanoseconds>(seqEnd - seqBegin).count();
+	std::cout << "Sequential: " << seqTime << " ns" << std::endl;
 	if (printPath)
 	{
 		printNodeVector(seqNodeVector, goal);
@@ -159,15 +159,15 @@ void runComparison(int graphSize, int numThreads, bool printPath)
 	parallelBFS(graph, parNodeVector, start, goal, numThreads);
 	std::chrono::steady_clock::time_point parEnd = std::chrono::steady_clock::now();
 	// Print stats
-	auto parTime = std::chrono::duration_cast<std::chrono::milliseconds>(parEnd - parBegin).count();
-	std::cout << "Parallel: " << parTime << " ms" << std::endl;
+	auto parTime = std::chrono::duration_cast<std::chrono::nanoseconds>(parEnd - parBegin).count();
+	std::cout << "Parallel: " << parTime << " ns" << std::endl;
 	if (printPath)
 	{
 		printNodeVector(parNodeVector, goal);
 		std::cout << std::endl;
 	}
 	// Calculate and print the speedup
-	std::cout << "Speedup: " << (double(seqTime) + 0.001) / (double(parTime) + 0.001) << std::endl;
+	std::cout << "Speedup: " << double(seqTime) / double(parTime) << std::endl;
 }
 
 void runTest(bool writeResult, std::string filename, bool printPath)
